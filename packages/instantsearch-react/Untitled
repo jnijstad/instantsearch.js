@@ -1,0 +1,73 @@
+// HitsPerPage
+createConnector({
+  getInitialState(props) {
+    return props.defaultValue;
+  },
+
+  shouldRender() {
+    return true;
+  },
+
+  refineSearchParameters(searchParameters, props, state) {
+    return searchParameters.setHitsPerPage(state);
+  },
+})
+
+// RefinementList
+createConnector({
+  getInitialState(props) {
+    return props.defaultValue;
+  },
+
+  mapAlgoliaStateToProps(algoliaState, props) {
+    const {
+      searchResults,
+      searchResultsSearchParameters,
+    } = algoliaState;
+    const {attributeName, limit, sortBy} = props;
+
+    let isFacetPresent = false;
+    if (searchResults) {
+      assertFacetDefined(
+        searchResultsSearchParameters,
+        searchResults,
+        attributeName
+      );
+      isFacetPresent = Boolean(searchResults.getFacetByName(attributeName));
+    }
+
+    const items = isFacetPresent ?
+      searchResults
+        .getFacetValues(attributeName, {sortBy})
+        .slice(0, limit)
+        .map(v => ({
+          value: v.name,
+          count: v.count,
+        })) :
+      null;
+
+    return {items};
+  },
+
+  transformProps(props, state) {
+    return {
+      items: props.items,
+      selectedItems: state,
+    };
+  },
+
+  refineSearchParameters(searchParameters, props, state) {
+    const {attributeName} = props;
+
+    return state.reduce((params, val) =>
+      params.addFacetRefinement(attributeName, val)
+    , searchParameters.addFacet(attributeName));
+  },
+})({
+  getFilters(props, state) {
+    return state.map(value => ({
+      label: `${props.name}: ${value}`,
+      onClear: nextState => nextState.filter(v => v !== value),
+    }));
+  },
+})

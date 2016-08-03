@@ -1,113 +1,34 @@
 import React, {Component} from 'react';
-import {withRouter} from 'react-router';
 
-import InstantSearch from '../src/InstantSearch';
-import {
-  SearchBox,
-  Hits,
-  HitsPerPage,
-  Pagination,
-  RefinementList,
-  RefinementListLinks,
-  Menu,
-  HierarchicalMenu,
-} from '..';
+import InstantSearch from '../src/InstantSearch2';
+import connectHitsPerPage from '../src/connectors/connectHitsPerPage2';
 
-import history from './history';
-
-class Movie extends Component {
-  render() {
-    return (
-      <div>
-        <img
-          src={this.props.hit.image}
-        />
-        {this.props.hit.name}
-      </div>
-    );
-  }
-}
+const HitsPerPage = connectHitsPerPage({})(props =>
+  <select value={props.value} onChange={e => props.refine(e.target.value)}>
+    {props.values.map(value =>
+      <option key={value} value={value}>{value}</option>
+    )}
+  </select>
+);
 
 class Search extends Component {
-  constructor() {
-    super();
-
-    this.state = {
-      facet: 'genre',
-    };
-  }
-
-  onSwitchClick = () => {
-    this.setState(state => ({
-      facet: state.facet === 'genre' ? 'year' : 'genre',
-    }));
-  };
-
-  createURL = (state, getQuery) => history.createHref(
-    `${state.page + 1}?${getQuery(state)}`
-  );
-
-  configureState = state => state.setPage(
-    parseInt(this.props.params.page - 1, 10)
-  );
-
   render() {
     return (
       <InstantSearch
         appId="latency"
         apiKey="6be0576ff61c053d5f9a3225e2a90f76"
         indexName="instant_search"
-        history={history}
-        createURL={this.createURL}
-        configureState={this.configureState}
-        trackedParameters={[
-          // Don't track page since we control it
-          'query',
-          'attribute:*',
-          'hitsPerPage',
-        ]}
       >
         <div>
-          <button onClick={this.onSwitchClick}>Switch facet</button>
-
-          <SearchBox focusShortcuts={['s']} searchAsYouType={true} />
           <HitsPerPage
-            defaultValue={5}
-            values={[5, 10]}
+            id="hPP"
+            values={[10, 20, 30]}
+            defaultValue={10}
           />
-          <HierarchicalMenu
-            name="wat"
-            attributes={[
-              'hierarchicalCategories.lvl0',
-              'hierarchicalCategories.lvl1',
-              'hierarchicalCategories.lvl2',
-            ]}
-            showMore
-          />
-          <Menu
-            attributeName="brand"
-            showMore
-            limitMin={10}
-            limitMax={20}
-          />
-          <RefinementList
-            attributeName="brand"
-            sortBy={['count']}
-            showMore
-          />
-          <RefinementListLinks
-            attributeName="brand"
-            showMore
-          />
-          <Hits
-            itemComponent={Movie}
-            // hitsPerPage={5}
-          />
-          <Pagination showLast maxPages={10} translations={{next: 'Next'}} />
         </div>
       </InstantSearch>
     );
   }
 }
 
-export default withRouter(Search);
+export default Search;
